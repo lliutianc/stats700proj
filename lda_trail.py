@@ -5,12 +5,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from data import *
-
+from util import *
 
 def tp_one_trail(dataset, model_type, topic_size, sample_size,
              max_iter=1000, min_iter=None, checkpoint=None, stop_increase=10, metric='ll_word'):
     assert model_type in ['lda', 'ctm'], f'invalid `model_type`: {model_type}...'
-    assert metric in ['ll', 'perplexity'], f'invalid `metric`: {metric}...'
+    assert metric in ['ll', 'pp'], f'invalid `metric`: {metric}...'
     if model_type == 'lda':
         model = tp.LDAModel(k=topic_size)
     if model_type == 'ctm':
@@ -32,11 +32,11 @@ def tp_one_trail(dataset, model_type, topic_size, sample_size,
     pre_metric = - np.infty
     stop_increase_cnt = 0.
     for i in range(0, max_iter, checkpoint):
-        model.train(i)
+        model.train(checkpoint)
         if metric == 'll':
             cur_metric = model.ll_per_word
-        if metric == 'perplexity':
-            cur_metric = model.perplexity
+        if metric == 'pp':
+            cur_metric = - model.perplexity  # smaller perplexity is better.
         if cur_metric >= pre_metric:
             pre_metric = cur_metric
         else:
@@ -48,23 +48,29 @@ def tp_one_trail(dataset, model_type, topic_size, sample_size,
     return model
 
 
-def boxplot_results(results_data, results_title, figwidth=5, figheight=4):
+def boxplot_results(results_data, results_title, args, figwidth=5, figheight=4):
     result = np.array(results_data).T
 
-    plt.figure(figsize=(figwidth, figheight))
+    plt.figure()
     _ = plt.boxplot(result)
     plt.xticks(range(1, len(results_data) + 1), results_title)
+    plt.xlabel(f'N & K')
+    plt.ylabel(f'{args.metric}')
+    plt_path = result_path + f'/{args.model}-{args.task}.jpg'
     plt.savefig(plt_path)
 
 
 def eval_model(model, dataset, metric='ll'):
+    assert metric in ['ll', 'pp'], f'invalid `metric`: {metric}...'
+
     docs = [model.make_doc(x) for (x, _) in dataset]
     lda_x, llk = model.infer(docs)
     if metric == 'll':
         return llk
-    if metric == 'perplexity':
-        # TODO: how to compute perplexity?
-        return llk
+    if metric == 'pp':
+        n = np.array([len(x) for (x, _) in dataset])
+        pp = llk / n
+        return np.exp(-pp)
 
 
 def run_trails(args, choice_set):
@@ -101,17 +107,18 @@ def run_trails(args, choice_set):
             exit(1)
         print(f'Finish: [{n}&{k}] trails in {(time.time() - start):.3f} seconds.')
 
-    boxplot_results(results_data, results_title)
+    boxplot_results(results_data, results_title, args)
 
 
 if __name__ == '__main__':
     cur_path = os.path.abspath(os.path.dirname(__file__))
     result_path = os.path.join(cur_path, 'result')
+    make_dirs(result_path)
 
     parser = argparse.ArgumentParser(description="IWAE experiment")
     parser.add_argument("--model", type=str, choices=['lda', 'ctm'], default='lda')
     parser.add_argument("--task", type=str, choices=['n', 'k', 'nk'], default='k')
-    parser.add_argument("--rep_times", type=int, default=3)
+    parser.add_argument("--rep_times", type=int, default=5)
     # train
     parser.add_argument("--max_iter", type=int, default=1_000)
     parser.add_argument("--min_iter", type=int, default=None)
@@ -125,7 +132,7 @@ if __name__ == '__main__':
 
     if args.task == 'n':
         ns = [5_000, 10_000, 20_000, 40_000]
-#         ns = [500, 1000, 2000]
+        # ns = [500, 1000, 2000]
         choice_set = [(n, args.k) for n in ns]
     if args.task == 'k':
         ks = [10, 50, 100, 300]
@@ -133,10 +140,8 @@ if __name__ == '__main__':
     if args.task == 'nk':
         choice_set = [(5_000, 10), (10_000, 50), (20_000, 100), (40_000, 300)]
 
-
-    plt_path = os.path.join(result_path, args.model, args.task)
     start = time.time()
     print('Start trails.')
     run_trails(args, choice_set)
     print(f"""Finish trails in {(time.time() - start):.3f} seconds, 
-            See result at {plt_path}...""")
+            See result at [{result_path}].""")
