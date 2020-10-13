@@ -49,7 +49,7 @@ class IMDBDataset(Dataset):
                     pos.append(words)
                 else:
                     neg.append(words)
-                if data_limit:
+                if data_limit is not None:
                     if (idx + 1) >= data_limit:
                         break
 

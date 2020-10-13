@@ -10,7 +10,7 @@ from data import *
 def tp_one_trail(dataset, model_type, topic_size, sample_size,
              max_iter=1000, min_iter=None, checkpoint=None, stop_increase=10, metric='ll_word'):
     assert model_type in ['lda', 'ctm'], f'invalid `model_type`: {model_type}...'
-    assert metric in ['ll_word', 'perplexity'], f'invalid `metric`: {metric}...'
+    assert metric in ['ll', 'perplexity'], f'invalid `metric`: {metric}...'
     if model_type == 'lda':
         model = tp.LDAModel(k=topic_size)
     if model_type == 'ctm':
@@ -33,7 +33,7 @@ def tp_one_trail(dataset, model_type, topic_size, sample_size,
     stop_increase_cnt = 0.
     for i in range(0, max_iter, checkpoint):
         model.train(i)
-        if metric == 'll_word':
+        if metric == 'll':
             cur_metric = model.ll_per_word
         if metric == 'perplexity':
             cur_metric = model.perplexity
@@ -73,27 +73,32 @@ def run_trails(args, choice_set):
     print(f'Finish: prepare train set (size: {len(trainset)}) in {(time.time() - start):.3f} seconds.')
 
     start = time.time()
-    validset = IMDBDataset('test')
+    validset = IMDBDataset('valid')
     print(f'Finish: prepare valid set (size: {len(validset)}) in {(time.time() - start):.3f} seconds.')
 
     results_data = []
     results_title = []
+
     for (n, k) in choice_set:
         if n > len(trainset):
             continue
         start = time.time()
         cur_result = []
 
+        print(f'start trail: {n}&{k}.')
         for _ in range(args.rep_times):
             trained_model = tp_one_trail(trainset, args.model, k, n,
                                          args.max_iter, args.min_iter, args.checkpoint,
                                          args.stop_increase, args.metric)
-
             cur_result.append(eval_model(trained_model, validset, args.metric))
+
         cur_result = np.array(cur_result)
         results_title.append(f'{n}&{k}')
-        results_data.append(cur_result.mean(0))
-
+        try:
+            results_data.append(cur_result.mean(0))
+        except:
+            print(cur_result.shape)
+            exit(1)
         print(f'Finish: [{n}&{k}] trails in {(time.time() - start):.3f} seconds.')
 
     boxplot_results(results_data, results_title)
@@ -106,13 +111,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="IWAE experiment")
     parser.add_argument("--model", type=str, choices=['lda', 'ctm'], default='lda')
     parser.add_argument("--task", type=str, choices=['n', 'k', 'nk'], default='k')
-    parser.add_argument("--rep_times", type=int, default=1)
+    parser.add_argument("--rep_times", type=int, default=3)
     # train
     parser.add_argument("--max_iter", type=int, default=1_000)
     parser.add_argument("--min_iter", type=int, default=None)
     parser.add_argument("--checkpoint", type=int, default=None)
     parser.add_argument("--stop_increase", type=int, default=10)
-    parser.add_argument("--metric", type=str, default='ll_word')
+    parser.add_argument("--metric", type=str, default='ll')
     parser.add_argument("--n", type=int, default=20_000)
     parser.add_argument("--k", type=int, default=100)
 
