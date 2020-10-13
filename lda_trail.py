@@ -9,17 +9,22 @@ from util import *
 
 def tp_one_trail(dataset, model_type, topic_size, sample_size,
              max_iter=1000, min_iter=None, checkpoint=None, stop_increase=10, metric='ll_word'):
-    assert model_type in ['lda', 'ctm'], f'invalid `model_type`: {model_type}...'
+    assert model_type in ['lda', 'ctm',"slda"], f'invalid `model_type`: {model_type}...'
     assert metric in ['ll', 'pp'], f'invalid `metric`: {metric}...'
     if model_type == 'lda':
         model = tp.LDAModel(k=topic_size)
     if model_type == 'ctm':
         model = tp.CTModel(k=topic_size)
+    if model_type == "slda":
+        model = tp.SLDAModel(k=topic_size)
 
     sample_size = min(sample_size, len(dataset))
     for i in range(sample_size):
         doc, label = dataset[i]
-        model.add_doc(doc)
+        if model_type == "slda":
+            model.add_doc(doc,label)
+        else:
+            model.add_doc(doc)
 
     if min_iter is None:
         min_iter = max_iter // 10
@@ -116,7 +121,7 @@ if __name__ == '__main__':
     make_dirs(result_path)
 
     parser = argparse.ArgumentParser(description="IWAE experiment")
-    parser.add_argument("--model", type=str, choices=['lda', 'ctm'], default='lda')
+    parser.add_argument("--model", type=str, choices=['lda', 'ctm', "slda"], default='lda')
     parser.add_argument("--task", type=str, choices=['n', 'k', 'nk'], default='k')
     parser.add_argument("--rep_times", type=int, default=5)
     # train
