@@ -40,7 +40,7 @@ class IMDBDataset(Dataset):
     def __init__(self, data, data_limit=None, device='cpu'):
         neg, pos = [], []
 
-        with open(data_file(data), 'r') as file:
+        with open(data_file(data), 'r', encoding="utf8") as file:
             reader = csv.reader(file)
             next(reader)
             for idx, line in enumerate(reader):
