@@ -85,7 +85,7 @@ def eval_model(model, dataset, metric='ll'):
         return np.exp(-pp)
 
 
-def run_trails(args, choice_set):
+def run_trials(args, choice_set):
     start = time.time()
     trainset = IMDBDataset('train')
     print(f'Finish: prepare train set (size: {len(trainset)}) in {(time.time() - start):.3f} seconds.')
@@ -103,7 +103,7 @@ def run_trails(args, choice_set):
         start = time.time()
         cur_result = []
         cur_train_metric = 0.
-        print(f'start trail: {n}&{k}.')
+        print(f'start trial: {n}&{k}.')
         for r in range(args.rep_times):
             trained_model, final_metric = tp_one_trial(trainset, args.model, k, n,
                                                        args.max_iter, args.min_iter, args.checkpoint,
@@ -120,7 +120,7 @@ def run_trails(args, choice_set):
         except:
             print(cur_result.shape)
             exit(1)
-        print(f'Finish: [{n}&{k}] trails in {(time.time() - start):.3f} seconds.')
+        print(f'Finish: [{n}&{k}] trials in {(time.time() - start):.3f} seconds.')
 
     trial_result = {'results_train_metric': results_train_metric,
                     'results_data': results_data, 
@@ -167,7 +167,7 @@ if __name__ == '__main__':
         # choice_set = [(5_000, 3), (10_000, 10), (20_000, 30), (40_000, 100)]
 
     start = time.time()
-    print('Start trails.')
-    run_trails(args, choice_set)
-    print(f"""Finish trails in {(time.time() - start):.3f} seconds, 
+    print('Start trials.')
+    run_trials(args, choice_set)
+    print(f"""Finish trials in {(time.time() - start):.3f} seconds, 
             See result at [{result_path}].""")
