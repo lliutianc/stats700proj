@@ -57,7 +57,6 @@ class IMDBDataset(Dataset):
                     else:
                         if len(neg) < (data_limit // 2):
                             neg.append(words)
-                    neg.append(words)
 
                 if data_limit is not None:
                     if (idx + 1) >= data_limit:
