@@ -47,6 +47,7 @@ def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=
 
         if i % checkpoint == 0:
             cur_metric /= checkpoint
+            print(f'Current loss: {cur_metric:.5f}')
             if cur_metric >= pre_metric:
                 pre_metric = cur_metric
                 cur_metric = 0.
@@ -62,18 +63,23 @@ def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=
     return model, final_metric
 
 
-def boxplot_results(results_train_metric, results_data, results_title, args, figwidth=5, figheight=4):
-    results_train_metric = np.array(results_train_metric)
-    result = np.array(results_data).T
+def boxplot_results(results_train_metric,
+                    results_train, results_valid, results_title,
+                    args, figwidth=5, figheight=4):
+    # results_train_metric = np.array(results_train_metric)
+    results_train = np.array(results_train).T
+    results_train_metric = np.median(results_train, axis=1)
+
+    results_valid = np.array(results_valid).T
 
     plt.cla()
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(111)
 
     # ax_r = plt.twinx()
-    _ = ax.boxplot(result)
-    _ = ax.plot(np.arange(1, len(results_data) + 1), results_train_metric, label=f'trainset: {args.metric}')
-    ax.set_xticks(range(1, len(results_data) + 1))
+    _ = ax.boxplot(results_valid)
+    _ = ax.plot(np.arange(1, len(results_valid) + 1), results_train_metric, label=f'trainset: {args.metric}')
+    ax.set_xticks(range(1, len(results_valid) + 1))
     ax.set_xticklabels(results_title)
     ax.set_xlabel(f'N & K')
     ax.set_ylabel(f'{args.metric}')
@@ -106,14 +112,15 @@ def run_trials(args, choice_set):
     validset = IMDBDataset('valid')
     print(f'Finish: prepare valid set (size: {len(validset)}) in {(time.time() - start):.3f} seconds.')
 
-    results_data = []
+    results_train = []
+    results_valid = []
     results_title = []
     results_train_metric = []
     for (n, k) in choice_set:
         if n > len(trainset):
             continue
         start = time.time()
-        cur_result = []
+        cur_train, cur_valid = [], []
         cur_train_metric = 0.
         print(f'start trial: {n}&{k}.')
         for r in range(args.rep_times):
@@ -121,41 +128,45 @@ def run_trials(args, choice_set):
                                                        args.min_cf, args.rm_top,
                                                        args.max_iter, args.min_iter, args.checkpoint,
                                                        args.stop_increase, args.metric)
-            cur_result.append(eval_model(trained_model, validset, args.metric))
-            trained_model.save(os.path.join(result_path, f'{args.model}#{n}#{k}#{r}.bin'))
+            cur_train.append(eval_model(trained_model, trainset, args.metric))
+            cur_valid.append(eval_model(trained_model, validset, args.metric))
+
+            trained_model.save(os.path.join(result_path, f'{args.model}#{n}#{k}#{r}.bin'), full=False)
             cur_train_metric += final_metric
 
         results_train_metric.append(cur_train_metric / args.rep_times)
-        cur_result = np.array(cur_result)
+        cur_train = np.array(cur_train)
+        cur_valid = np.array(cur_valid)
         results_title.append(f'{n}&{k}')
         try:
-            results_data.append(cur_result.mean(0))
+            results_train.append(cur_train.mean(0))
+            results_valid.append(cur_valid.mean(0))
         except:
-            print(cur_result.shape)
+            print(cur_valid.shape)
             exit(1)
         print(f'Finish: [{n}&{k}] trials in {(time.time() - start):.3f} seconds.')
 
     trial_result = {'results_train_metric': results_train_metric,
-                    'results_data': results_data, 
+                    'results_train': results_train,
+                    'results_valid': results_valid,
                     'results_title': results_title}
     with open(os.path.join(result_path, f'{args.model}-{args.task}.pkl'), 'wb') as file:
         pickle.dump(trial_result, file)
 
-    boxplot_results(results_train_metric, results_data, results_title, args)
-    try:
-        boxplot_results(results_train_metric, results_data, results_title, args)
-    except:
-        print(f'Fail to plot: {n}#{k}.')
+    boxplot_results(results_train_metric, results_train, results_valid, results_title, args)
+    # try:
+    #     # boxplot_results(results_train_metric, results_data, results_title, args)
+    # except:
+    #     print(f'Fail to plot: {n}#{k}.')
 
 
 if __name__ == '__main__':
     cur_path = os.path.abspath(os.path.dirname(__file__))
     result_path = os.path.join(cur_path, 'result')
-    # model_path = os.path.join(cur_path, 'model')
 
     make_dirs(result_path)
 
-    parser = argparse.ArgumentParser(description="IWAE experiment")
+    parser = argparse.ArgumentParser(description="Stat700proj experiment")
     parser.add_argument("--model", type=str, choices=['lda', 'ctm', "slda"], default='lda')
     parser.add_argument("--task", type=str, choices=['n', 'k', 'nk'], default='k')
     parser.add_argument("--rep_times", type=int, default=3)
@@ -184,6 +195,6 @@ if __name__ == '__main__':
         choice_set = list(zip(ns, ks))
 
     start = time.time()
-    print('Start trials.')
+    print(f'Start trials: {args.model}-{args.task}')
     run_trials(args, choice_set)
     print(f"Finish trials in {(time.time() - start):.3f} seconds.")
