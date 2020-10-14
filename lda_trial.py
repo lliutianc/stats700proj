@@ -8,12 +8,12 @@ from data import *
 from util import *
 
 
-def tp_one_trial(dataset, model_type, topic_size, sample_size,
-             max_iter=1000, min_iter=None, checkpoint=None, stop_increase=10, metric='ll_word'):
+def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=5,
+             max_iter=1000, min_iter=None, checkpoint=None, stop_increase=10, metric='ll'):
     assert model_type in ['lda', 'ctm',"slda"], f'invalid `model_type`: {model_type}...'
     assert metric in ['ll', 'pp'], f'invalid `metric`: {metric}...'
     if model_type == 'lda':
-        model = tp.LDAModel(k=topic_size)
+        model = tp.LDAModel(k=topic_size, tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top)
     if model_type == 'ctm':
         model = tp.CTModel(k=topic_size)
     if model_type == "slda":
@@ -28,12 +28,11 @@ def tp_one_trial(dataset, model_type, topic_size, sample_size,
             model.add_doc(doc)
 
     if min_iter is None:
-        min_iter = max_iter // 10
+        min_iter = max_iter // 2
     if checkpoint is None:
-        checkpoint = max_iter // 10
+        checkpoint = max_iter // 50
 
-    for i in range(min_iter):
-        model.train(i)
+    model.train(min_iter)
 
     pre_metric = - np.infty
     stop_increase_cnt = 0.
@@ -110,7 +109,8 @@ def run_trials(args, choice_set):
         cur_train_metric = 0.
         print(f'start trial: {n}&{k}.')
         for r in range(args.rep_times):
-            trained_model, final_metric = tp_one_trial(trainset, args.model, k, n,
+            trained_model, final_metric = tp_one_trial(trainset, args.model, k, n, 
+                                                       args.min_cf, args.rm_top,
                                                        args.max_iter, args.min_iter, args.checkpoint,
                                                        args.stop_increase, args.metric)
             cur_result.append(eval_model(trained_model, validset, args.metric))
@@ -132,6 +132,7 @@ def run_trials(args, choice_set):
                     'results_title': results_title}
     with open(os.path.join(result_path, f'{args.model}-{args.task}.pkl'), 'wb') as file:
         pickle.dump(trial_result, file)
+
     boxplot_results(results_train_metric, results_data, results_title, args)
     try:
         boxplot_results(results_train_metric, results_data, results_title, args)
@@ -142,7 +143,7 @@ def run_trials(args, choice_set):
 if __name__ == '__main__':
     cur_path = os.path.abspath(os.path.dirname(__file__))
     result_path = os.path.join(cur_path, 'result')
-    model_path = os.path.join(cur_path, 'model')
+    # model_path = os.path.join(cur_path, 'model')
 
     make_dirs(result_path)
 
@@ -150,7 +151,6 @@ if __name__ == '__main__':
     parser.add_argument("--model", type=str, choices=['lda', 'ctm', "slda"], default='lda')
     parser.add_argument("--task", type=str, choices=['n', 'k', 'nk'], default='k')
     parser.add_argument("--rep_times", type=int, default=3)
-
     # train
     parser.add_argument("--max_iter", type=int, default=1_000)
     parser.add_argument("--min_iter", type=int, default=None)
@@ -158,7 +158,11 @@ if __name__ == '__main__':
     parser.add_argument("--stop_increase", type=int, default=10)
     parser.add_argument("--metric", type=str, default='pp')
     parser.add_argument("--n", type=int, default=20_000)
-    parser.add_argument("--k", type=int, default=50)
+    parser.add_argument("--k", type=int, default=20)
+    # Other
+    parser.add_argument("--rm_top", type=int, default=5)
+    parser.add_argument("--min_cf", type=int, default=3)
+
 
     args = parser.parse_args()
 
@@ -171,10 +175,8 @@ if __name__ == '__main__':
         choice_set = [(args.n, k) for k in ks]
     if args.task == 'nk':
         choice_set = list(zip(ns, ks))
-        # choice_set = [(5_000, 3), (10_000, 10), (20_000, 30), (40_000, 100)]
 
     start = time.time()
     print('Start trials.')
     run_trials(args, choice_set)
-    print(f"""Finish trials in {(time.time() - start):.3f} seconds, 
-            See result at [{result_path}].""")
+    print(f"Finish trials in {(time.time() - start):.3f} seconds.")
