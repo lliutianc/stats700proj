@@ -125,7 +125,7 @@ def run_trails(args, choice_set):
     trial_result = {'results_train_metric': results_train_metric,
                     'results_data': results_data, 
                     'results_title': results_title}
-    with open(os.path.join(result_path, f'{args.model}-{args.task}.pkl'). 'wb') as file:
+    with open(os.path.join(result_path, f'{args.model}-{args.task}.pkl'), 'wb') as file:
         pickle.dump(trial_result, file)
     try:
         boxplot_results(results_train_metric, results_data, results_title, args)
