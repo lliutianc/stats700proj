@@ -78,6 +78,7 @@ class IMDBDataset(Dataset):
     def shuffle(self):
         order = np.arange(len(self))
         np.random.shuffle(order)
+        order = order.astype(np.int)
         self.x = self.x[order]
         self.y = self.y[order]
 
