@@ -9,7 +9,7 @@ from util import *
 
 
 def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=5, burn_in=500,
-             max_iter=1000, min_iter=None, checkpoint=None, stop_increase=1, metric='ll'):
+             max_iter=1000, min_iter=None, checkpoint=None, stop_increase=1, metric='ll', single_class=False):
     assert model_type in ['lda', 'ctm',"slda"], f'invalid `model_type`: {model_type}...'
     assert metric in ['ll', 'pp'], f'invalid `metric`: {metric}...'
     if model_type == 'lda':
@@ -26,6 +26,7 @@ def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=
             model.add_doc(doc,[float(label),])
         else:
             model.add_doc(doc)
+
 
     if min_iter is None:
         min_iter = max_iter // 10
