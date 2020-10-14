@@ -20,6 +20,7 @@ def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=
         model = tp.SLDAModel(k=topic_size,vars="b", tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top)
 
     sample_size = min(sample_size, len(dataset))
+    
     max_iter = max_iter*sample_size//1000  # ensure the number of iterations increases with the size of sample
     model.burn_in = max_iter // 5  # set burn-in: 20 percent of max iterations
 
@@ -29,6 +30,7 @@ def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=
             model.add_doc(doc,[float(label),])
         else:
             model.add_doc(doc)
+
 
     if min_iter is None:
         min_iter = max_iter // 5
@@ -178,7 +180,7 @@ if __name__ == '__main__':
     parser.add_argument("--max_iter", type=int, default=5_000)
     parser.add_argument("--min_iter", type=int, default=None)
     parser.add_argument("--checkpoint", type=int, default=None)
-    parser.add_argument("--stop_increase", type=int, default=1)
+    parser.add_argument("--stop_increase", type=int, default=5)
     parser.add_argument("--metric", type=str, default='pp')
     parser.add_argument("--n", type=int, default=20_000)
     parser.add_argument("--k", type=int, default=20)
