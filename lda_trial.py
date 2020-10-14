@@ -57,6 +57,8 @@ def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=
             break
 
     final_metric = model.perplexity if metric == 'pp' else model.ll_per_word
+
+    print(f'{i + min_iter}')
     return model, final_metric
 
 
