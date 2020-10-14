@@ -16,13 +16,13 @@ def tp_one_trail(dataset, model_type, topic_size, sample_size,
     if model_type == 'ctm':
         model = tp.CTModel(k=topic_size)
     if model_type == "slda":
-        model = tp.SLDAModel(k=topic_size)
+        model = tp.SLDAModel(k=topic_size,vars="b")
 
     sample_size = min(sample_size, len(dataset))
     for i in range(sample_size):
         doc, label = dataset[i]
         if model_type == "slda":
-            model.add_doc(doc,label)
+            model.add_doc(doc,[float(label),])
         else:
             model.add_doc(doc)
 
