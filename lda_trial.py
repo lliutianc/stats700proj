@@ -36,16 +36,22 @@ def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=
 
     pre_metric = - np.infty
     stop_increase_cnt = 0.
-    for i in range(0, max_iter, checkpoint):
-        model.train(checkpoint)
+    cur_metric = 0.
+    for i in range(1, max_iter+1):
+        model.train(1)
+
         if metric == 'll':
-            cur_metric = model.ll_per_word
+            cur_metric += model.ll_per_word
         if metric == 'pp':
-            cur_metric = - model.perplexity  # smaller perplexity is better.
-        if cur_metric >= pre_metric:
-            pre_metric = cur_metric
-        else:
-            stop_increase_cnt += 1
+            cur_metric += - model.perplexity  # smaller perplexity is better.
+
+        if i % checkpoint == 0:
+            cur_metric /= checkpoint
+            if cur_metric >= pre_metric:
+                pre_metric = cur_metric
+                cur_metric = 0.
+            else:
+                stop_increase_cnt += 1
 
         if stop_increase_cnt >= stop_increase:
             break
