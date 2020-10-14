@@ -106,7 +106,7 @@ def eval_model(model, dataset, metric='ll'):
 def run_trials(args, choice_set):
     start = time.time()
     trainset = IMDBDataset('train', data_limit=20_000)
-    trainset.shuffle()
+    # trainset.shuffle()
     print(f'Finish: prepare train set (size: {len(trainset)}) in {(time.time() - start):.3f} seconds.')
 
     start = time.time()
