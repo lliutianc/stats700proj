@@ -91,7 +91,7 @@ def eval_model(model, dataset, metric='ll'):
 
 def run_trials(args, choice_set):
     start = time.time()
-    trainset = IMDBDataset('train')
+    trainset = IMDBDataset('train', data_limit=20_000)
     print(f'Finish: prepare train set (size: {len(trainset)}) in {(time.time() - start):.3f} seconds.')
 
     start = time.time()
@@ -148,7 +148,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="IWAE experiment")
     parser.add_argument("--model", type=str, choices=['lda', 'ctm', "slda"], default='lda')
     parser.add_argument("--task", type=str, choices=['n', 'k', 'nk'], default='k')
-    parser.add_argument("--rep_times", type=int, default=5)
+    parser.add_argument("--rep_times", type=int, default=3)
 
     # train
     parser.add_argument("--max_iter", type=int, default=1_000)
@@ -156,12 +156,12 @@ if __name__ == '__main__':
     parser.add_argument("--checkpoint", type=int, default=None)
     parser.add_argument("--stop_increase", type=int, default=10)
     parser.add_argument("--metric", type=str, default='pp')
-    parser.add_argument("--n", type=int, default=40_000)
+    parser.add_argument("--n", type=int, default=20_000)
     parser.add_argument("--k", type=int, default=50)
 
     args = parser.parse_args()
 
-    ns = [3_000, 5_000, 10_000, 20_000, 40_000]
+    ns = [3_000, 5_000, 10_000, 15_000, 20_000]
     ks = [3, 5, 10, 30, 100]
 
     if args.task == 'n':

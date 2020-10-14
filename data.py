@@ -37,18 +37,28 @@ def data_file(data):
 
 
 class IMDBDataset(Dataset):
-    def __init__(self, data, data_limit=None, device='cpu'):
+    def __init__(self, data, data_limit=None, balanced_limit=False):
         neg, pos = [], []
 
-        with open(data_file(data), 'r', encoding="utf8") as file:
+        with open(data_file(data), 'r', encoding="utf8") as file:   
             reader = csv.reader(file)
             next(reader)
             for idx, line in enumerate(reader):
                 words = [stemmer.stem(word) for word in line[0].split() if not is_stopword(word)]
                 if line[1] == '1':
-                    pos.append(words)
+                    if not balanced_limit:
+                        pos.append(words)
+                    else:
+                        if len(pos) < (data_limit // 2):
+                            pos.append(words)
                 else:
+                    if not balanced_limit:
+                        neg.append(words)
+                    else:
+                        if len(neg) < (data_limit // 2):
+                            neg.append(words)
                     neg.append(words)
+
                 if data_limit is not None:
                     if (idx + 1) >= data_limit:
                         break
