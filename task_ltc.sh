@@ -13,9 +13,9 @@
 #SBATCH --output=/home/%u/outputs/%x-%j.log
 
 # <include the code as if you are running it from the terminal>
-python3 -u lda_trial.py --model $1 --task n --rep_times 3 --metric pp
+python3 -u lda_trial.py --model $1 --task n --rep_times 3 --metric $2
 echo $'FINISH:'$1' - n'
-python3 -u lda_trial.py --model $1 --task k --rep_times 3 --metric pp
+python3 -u lda_trial.py --model $1 --task k --rep_times 3 --metric $2
 echo $'FINISH:'$1' - k'
-python3 -u lda_trial.py --model $1 --task nk --rep_times 3 --metric pp
+python3 -u lda_trial.py --model $1 --task nk --rep_times 3 --metric $2
 echo $'FINISH:'$1' - nk'
