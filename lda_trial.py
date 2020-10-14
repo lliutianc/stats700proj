@@ -8,18 +8,21 @@ from data import *
 from util import *
 
 
-def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=5, burn_in=500,
+def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=5,
              max_iter=1000, min_iter=None, checkpoint=None, stop_increase=1, metric='ll'):
     assert model_type in ['lda', 'ctm',"slda"], f'invalid `model_type`: {model_type}...'
     assert metric in ['ll', 'pp'], f'invalid `metric`: {metric}...'
     if model_type == 'lda':
-        model = tp.LDAModel(k=topic_size, tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top, burn_in=burn_in)
+        model = tp.LDAModel(k=topic_size, tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top)
     if model_type == 'ctm':
-        model = tp.CTModel(k=topic_size, tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top, burn_in=burn_in)
+        model = tp.CTModel(k=topic_size, tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top)
     if model_type == "slda":
-        model = tp.SLDAModel(k=topic_size,vars="b", tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top, burn_in=burn_in)
+        model = tp.SLDAModel(k=topic_size,vars="b", tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top)
 
     sample_size = min(sample_size, len(dataset))
+    max_iter = max_iter*sample_size//1000  # ensure the number of iterations increases with the size of sample
+    model.burn_in = max_iter // 5  # set burn-in: 20 percent of max iterations
+
     for i in range(sample_size):
         doc, label = dataset[i]
         if model_type == "slda":
@@ -28,9 +31,9 @@ def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=
             model.add_doc(doc)
 
     if min_iter is None:
-        min_iter = max_iter // 10
+        min_iter = max_iter // 5
     if checkpoint is None:
-        checkpoint = max_iter // 50
+        checkpoint = max_iter // 5
 
     model.train(min_iter)
 
@@ -89,7 +92,6 @@ def boxplot_results(results_train_metric,
     plt_path = result_path + f'/{args.model}-{args.task}-{args.metric}.jpg'
     plt.savefig(plt_path)
 
-
 def eval_model(model, dataset, metric='ll'):
     assert metric in ['ll', 'pp'], f'invalid `metric`: {metric}...'
 
@@ -126,7 +128,7 @@ def run_trials(args, choice_set):
         print(f'start trial: {n}&{k}.')
         for r in range(args.rep_times):
             trained_model, final_metric = tp_one_trial(trainset, args.model, k, n, 
-                                                       args.min_cf, args.rm_top, args.burn_in,
+                                                       args.min_cf, args.rm_top,  # args.burn_in,
                                                        args.max_iter, args.min_iter, args.checkpoint,
                                                        args.stop_increase, args.metric)
 
@@ -173,7 +175,7 @@ if __name__ == '__main__':
     parser.add_argument("--task", type=str, choices=['n', 'k', 'nk'], default='k')
     parser.add_argument("--rep_times", type=int, default=3)
     # train
-    parser.add_argument("--max_iter", type=int, default=2_000)
+    parser.add_argument("--max_iter", type=int, default=5_000)
     parser.add_argument("--min_iter", type=int, default=None)
     parser.add_argument("--checkpoint", type=int, default=None)
     parser.add_argument("--stop_increase", type=int, default=1)
@@ -183,7 +185,7 @@ if __name__ == '__main__':
     # Other
     parser.add_argument("--rm_top", type=int, default=5)
     parser.add_argument("--min_cf", type=int, default=3)
-    parser.add_argument("--burn_in", type=int, default=500)
+    # parser.add_argument("--burn_in", type=int, default=500)
 
     args = parser.parse_args()
 
