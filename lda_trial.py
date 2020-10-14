@@ -8,8 +8,8 @@ from data import *
 from util import *
 
 
-def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=5,
-             max_iter=1000, min_iter=None, checkpoint=None, stop_increase=10, metric='ll'):
+def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, #rm_top=5,
+             max_iter=1000, min_iter=None, checkpoint=None, stop_increase=1, metric='ll'):
     assert model_type in ['lda', 'ctm',"slda"], f'invalid `model_type`: {model_type}...'
     assert metric in ['ll', 'pp'], f'invalid `metric`: {metric}...'
     if model_type == 'lda':
@@ -28,7 +28,7 @@ def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=
             model.add_doc(doc)
 
     if min_iter is None:
-        min_iter = max_iter // 2
+        min_iter = max_iter // 10
     if checkpoint is None:
         checkpoint = max_iter // 50
 
@@ -39,7 +39,7 @@ def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=
     cur_metric = 0.
     for i in range(1, max_iter+1):
         model.train(1)
-
+        # Metric is always larger, better
         if metric == 'll':
             cur_metric += model.ll_per_word
         if metric == 'pp':
@@ -128,6 +128,7 @@ def run_trials(args, choice_set):
                                                        args.min_cf, args.rm_top,
                                                        args.max_iter, args.min_iter, args.checkpoint,
                                                        args.stop_increase, args.metric)
+
             cur_train.append(eval_model(trained_model, trainset, args.metric))
             cur_valid.append(eval_model(trained_model, validset, args.metric))
 
@@ -174,7 +175,7 @@ if __name__ == '__main__':
     parser.add_argument("--max_iter", type=int, default=2_000)
     parser.add_argument("--min_iter", type=int, default=None)
     parser.add_argument("--checkpoint", type=int, default=None)
-    parser.add_argument("--stop_increase", type=int, default=10)
+    parser.add_argument("--stop_increase", type=int, default=1)
     parser.add_argument("--metric", type=str, default='pp')
     parser.add_argument("--n", type=int, default=20_000)
     parser.add_argument("--k", type=int, default=20)

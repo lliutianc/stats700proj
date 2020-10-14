@@ -44,7 +44,8 @@ class IMDBDataset(Dataset):
             reader = csv.reader(file)
             next(reader)
             for idx, line in enumerate(reader):
-                words = [stemmer.stem(word) for word in line[0].split() if not is_stopword(word)]
+#                 words = [stemmer.stem(word) for word in line[0].split() if not is_stopword(word)]
+                words = [word for word in line[0].split() if not is_stopword(word)]
                 if line[1] == '1':
                     if not balanced_limit:
                         pos.append(words)
