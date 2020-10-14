@@ -73,7 +73,7 @@ def boxplot_results(results_train_metric, results_data, results_title, args, fig
     ax.legend()
     
     plt.tight_layout()
-    plt_path = result_path + f'/{args.model}-{args.task}.jpg'
+    plt_path = result_path + f'/{args.model}-{args.task}-{args.metric}.jpg'
     plt.savefig(plt_path)
 
 
@@ -82,12 +82,12 @@ def eval_model(model, dataset, metric='ll'):
 
     docs = [model.make_doc(x) for (x, _) in dataset]
     lda_x, llk = model.infer(docs)
+    n = np.array([len(x) for (x, _) in dataset])
+    llk_per_word = llk / n
     if metric == 'll':
-        return llk
+        return llk_per_word
     if metric == 'pp':
-        n = np.array([len(x) for (x, _) in dataset])
-        pp = llk / n
-        return np.exp(-pp)
+        return np.exp(-llk_per_word)
 
 
 def run_trials(args, choice_set):
