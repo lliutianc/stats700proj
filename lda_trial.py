@@ -1,4 +1,4 @@
-import argparse, os, time
+import argparse, os, time, pickle
 
 import tomotopy as tp
 import numpy as np
@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 from data import *
 from util import *
 
-def tp_one_trail(dataset, model_type, topic_size, sample_size,
+
+def tp_one_trial(dataset, model_type, topic_size, sample_size,
              max_iter=1000, min_iter=None, checkpoint=None, stop_increase=10, metric='ll_word'):
     assert model_type in ['lda', 'ctm',"slda"], f'invalid `model_type`: {model_type}...'
     assert metric in ['ll', 'pp'], f'invalid `metric`: {metric}...'
@@ -50,17 +51,23 @@ def tp_one_trail(dataset, model_type, topic_size, sample_size,
         if stop_increase_cnt >= stop_increase:
             break
 
-    return model
+    final_metric = model.perplexity if metric == 'pp' else model.ll_per_word
+    return model, final_metric
 
 
-def boxplot_results(results_data, results_title, args, figwidth=5, figheight=4):
+def boxplot_results(results_train_metric, results_data, results_title, args, figwidth=5, figheight=4):
+    results_train_metric = np.array(results_train_metric)
     result = np.array(results_data).T
 
-    plt.figure()
-    _ = plt.boxplot(result)
+    plt.figure(figsize=(8, 6))
+    _ = plt.boxplot(result, legend='vald_value')
+    _ = plt.plot(range(1, len(results_data) + 1), results_train_metric, label='train_value')
     plt.xticks(range(1, len(results_data) + 1), results_title)
     plt.xlabel(f'N & K')
     plt.ylabel(f'{args.metric}')
+    plt.legend()
+    
+    plt.tight_layout()
     plt_path = result_path + f'/{args.model}-{args.task}.jpg'
     plt.savefig(plt_path)
 
@@ -89,20 +96,23 @@ def run_trails(args, choice_set):
 
     results_data = []
     results_title = []
-
+    results_train_metric = []
     for (n, k) in choice_set:
         if n > len(trainset):
             continue
         start = time.time()
         cur_result = []
-
+        cur_train_metric = 0.
         print(f'start trail: {n}&{k}.')
-        for _ in range(args.rep_times):
-            trained_model = tp_one_trail(trainset, args.model, k, n,
-                                         args.max_iter, args.min_iter, args.checkpoint,
-                                         args.stop_increase, args.metric)
+        for r in range(args.rep_times):
+            trained_model, final_metric = tp_one_trial(trainset, args.model, k, n,
+                                                       args.max_iter, args.min_iter, args.checkpoint,
+                                                       args.stop_increase, args.metric)
             cur_result.append(eval_model(trained_model, validset, args.metric))
+            trained_model.save(os.path.join(result_path, f'{args.model}#{n}#{k}#{r}.bin'))
+            cur_train_metric += final_metric
 
+        results_train_metric.append(cur_train_metric / args.rep_times)
         cur_result = np.array(cur_result)
         results_title.append(f'{n}&{k}')
         try:
@@ -112,12 +122,22 @@ def run_trails(args, choice_set):
             exit(1)
         print(f'Finish: [{n}&{k}] trails in {(time.time() - start):.3f} seconds.')
 
-    boxplot_results(results_data, results_title, args)
+    trial_result = {'results_train_metric': results_train_metric,
+                    'results_data': results_data, 
+                    'results_title': results_title}
+    with open(os.path.join(result_path, f'{args.model}-{args.task}.pkl'). 'wb') as file:
+        pickle.dump(trial_result, file)
+    try:
+        boxplot_results(results_train_metric, results_data, results_title, args)
+    except:
+        print(f'Fail to plot: {plt_path}.')
 
 
 if __name__ == '__main__':
     cur_path = os.path.abspath(os.path.dirname(__file__))
     result_path = os.path.join(cur_path, 'result')
+    model_path = os.path.join(cur_path, 'model')
+
     make_dirs(result_path)
 
     parser = argparse.ArgumentParser(description="IWAE experiment")
@@ -131,19 +151,20 @@ if __name__ == '__main__':
     parser.add_argument("--stop_increase", type=int, default=10)
     parser.add_argument("--metric", type=str, default='ll')
     parser.add_argument("--n", type=int, default=20_000)
-    parser.add_argument("--k", type=int, default=100)
+    parser.add_argument("--k", type=int, default=50)
 
     args = parser.parse_args()
 
+    ns = [3_000, 5_000, 10_000, 20_000, 40_000]
+    ks = [3, 5, 10, 30, 100]
+
     if args.task == 'n':
-        ns = [5_000, 10_000, 20_000, 40_000]
-        # ns = [500, 1000, 2000]
         choice_set = [(n, args.k) for n in ns]
     if args.task == 'k':
-        ks = [10, 50, 100, 300]
         choice_set = [(args.n, k) for k in ks]
     if args.task == 'nk':
-        choice_set = [(5_000, 10), (10_000, 50), (20_000, 100), (40_000, 300)]
+        choice_set = list(zip(ns, ks))
+        # choice_set = [(5_000, 3), (10_000, 10), (20_000, 30), (40_000, 100)]
 
     start = time.time()
     print('Start trails.')
