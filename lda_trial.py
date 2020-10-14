@@ -68,7 +68,7 @@ def boxplot_results(results_train_metric,
                     args, figwidth=5, figheight=4):
     # results_train_metric = np.array(results_train_metric)
     results_train = np.array(results_train).T
-    results_train_metric = np.median(results_train, axis=1)
+    results_train_metric = np.median(results_train, axis=0)
 
     results_valid = np.array(results_valid).T
 
@@ -106,6 +106,7 @@ def eval_model(model, dataset, metric='ll'):
 def run_trials(args, choice_set):
     start = time.time()
     trainset = IMDBDataset('train', data_limit=20_000)
+    trainset.shuffle()
     print(f'Finish: prepare train set (size: {len(trainset)}) in {(time.time() - start):.3f} seconds.')
 
     start = time.time()
