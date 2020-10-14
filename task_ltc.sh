@@ -1,13 +1,14 @@
 #!/bin/bash
 
-#SBATCH --job-name=<job name>
-#SBATCH --mail-user=<email address>
+#SBATCH --job-name=700-stage1
+#SBATCH --mail-user=liutianc@umich.edu
 #SBATCH --mail-type=BEGIN,END
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=32
 #SBATCH --mem-per-cpu=32000m 
-#SBATCH --time=01:00:00
-#SBATCH --account=bnallamo1
+#SBATCH --time=10:00:00
+#SBATCH --account=stats_dept1
 #SBATCH --partition=standard
 #SBATCH --output=/home/%u/outputs/%x-%j.log
 
@@ -15,7 +16,7 @@
 python3 -u lda_trial.py --model lda --task n --rep_times 5 --metric pp --max_iter 500 
 echo $'FINISH: LDA - n'
 python3 -u lda_trial.py --model lda --task k --rep_times 5 --metric pp --max_iter 500
-echo $'FINISH: LDA - k'
+echo $'FINISH: LDA - '
 python3 -u lda_trial.py --model lda --task nk --rep_times 5 --metric pp --max_iter 500
 echo $'FINISH: LDA - nk'
 
