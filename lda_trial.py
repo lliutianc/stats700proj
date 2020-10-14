@@ -8,7 +8,7 @@ from data import *
 from util import *
 
 
-def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, #rm_top=5,
+def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=5,
              max_iter=1000, min_iter=None, checkpoint=None, stop_increase=1, metric='ll'):
     assert model_type in ['lda', 'ctm',"slda"], f'invalid `model_type`: {model_type}...'
     assert metric in ['ll', 'pp'], f'invalid `metric`: {metric}...'
