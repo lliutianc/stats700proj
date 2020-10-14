@@ -13,12 +13,12 @@ def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=
     assert model_type in ['lda', 'ctm',"slda"], f'invalid `model_type`: {model_type}...'
     assert metric in ['ll', 'pp'], f'invalid `metric`: {metric}...'
     if model_type == 'lda':
-        model = tp.LDAModel(k=topic_size, tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top, burn_in=burn_in)
+        model = tp.LDAModel(k=topic_size, tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top)
     if model_type == 'ctm':
-        model = tp.CTModel(k=topic_size, tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top, burn_in=burn_in)
+        model = tp.CTModel(k=topic_size, tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top)
     if model_type == "slda":
-        model = tp.SLDAModel(k=topic_size,vars="b", tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top, burn_in=burn_in)
-
+        model = tp.SLDAModel(k=topic_size,vars="b", tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top)
+    model.burn_in = burn_in
     sample_size = min(sample_size, len(dataset))
     for i in range(sample_size):
         doc, label = dataset[i]
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     parser.add_argument("--max_iter", type=int, default=2_000)
     parser.add_argument("--min_iter", type=int, default=None)
     parser.add_argument("--checkpoint", type=int, default=None)
-    parser.add_argument("--stop_increase", type=int, default=1)
+    parser.add_argument("--stop_increase", type=int, default=5)
     parser.add_argument("--metric", type=str, default='pp')
     parser.add_argument("--n", type=int, default=20_000)
     parser.add_argument("--k", type=int, default=20)
