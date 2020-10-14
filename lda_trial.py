@@ -63,13 +63,13 @@ def boxplot_results(results_train_metric, results_data, results_title, args, fig
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(111)
 
-    ax_r = plt.twinx()
+    # ax_r = plt.twinx()
     _ = ax.boxplot(result)
-    _ = ax_r.plot(np.arange(1, len(results_data) + 1), results_train_metric, label=f'trainset: {args.metric}')
+    _ = ax.plot(np.arange(1, len(results_data) + 1), results_train_metric, label=f'trainset: {args.metric}')
     ax.set_xticks(range(1, len(results_data) + 1), results_title)
     ax.set_xlabel(f'N & K')
     ax.set_ylabel(f'{args.metric}')
-    ax_r.legend()
+    ax.legend()
     
     plt.tight_layout()
     plt_path = result_path + f'/{args.model}-{args.task}.jpg'
@@ -155,7 +155,7 @@ if __name__ == '__main__':
     parser.add_argument("--min_iter", type=int, default=None)
     parser.add_argument("--checkpoint", type=int, default=None)
     parser.add_argument("--stop_increase", type=int, default=10)
-    parser.add_argument("--metric", type=str, default='ll')
+    parser.add_argument("--metric", type=str, default='pp')
     parser.add_argument("--n", type=int, default=40_000)
     parser.add_argument("--k", type=int, default=50)
 
