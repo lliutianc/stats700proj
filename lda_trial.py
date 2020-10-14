@@ -59,13 +59,17 @@ def boxplot_results(results_train_metric, results_data, results_title, args, fig
     results_train_metric = np.array(results_train_metric)
     result = np.array(results_data).T
 
-    plt.figure(figsize=(8, 6))
-    _ = plt.boxplot(result, legend='vald_value')
-    _ = plt.plot(range(1, len(results_data) + 1), results_train_metric, label='train_value')
-    plt.xticks(range(1, len(results_data) + 1), results_title)
-    plt.xlabel(f'N & K')
-    plt.ylabel(f'{args.metric}')
-    plt.legend()
+    plt.cla()
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(111)
+
+    ax_r = plt.twinx()
+    _ = ax.boxplot(result)
+    _ = ax_r.plot(np.arange(1, len(results_data) + 1), results_train_metric, label=f'trainset: {args.metric}')
+    ax.set_xticks(range(1, len(results_data) + 1), results_title)
+    ax.set_xlabel(f'N & K')
+    ax.set_ylabel(f'{args.metric}')
+    ax_r.legend()
     
     plt.tight_layout()
     plt_path = result_path + f'/{args.model}-{args.task}.jpg'
@@ -127,10 +131,11 @@ def run_trials(args, choice_set):
                     'results_title': results_title}
     with open(os.path.join(result_path, f'{args.model}-{args.task}.pkl'), 'wb') as file:
         pickle.dump(trial_result, file)
+    boxplot_results(results_train_metric, results_data, results_title, args)
     try:
         boxplot_results(results_train_metric, results_data, results_title, args)
     except:
-        print(f'Fail to plot: {plt_path}.')
+        print(f'Fail to plot: {n}#{k}.')
 
 
 if __name__ == '__main__':
@@ -144,13 +149,14 @@ if __name__ == '__main__':
     parser.add_argument("--model", type=str, choices=['lda', 'ctm', "slda"], default='lda')
     parser.add_argument("--task", type=str, choices=['n', 'k', 'nk'], default='k')
     parser.add_argument("--rep_times", type=int, default=5)
+
     # train
     parser.add_argument("--max_iter", type=int, default=1_000)
     parser.add_argument("--min_iter", type=int, default=None)
     parser.add_argument("--checkpoint", type=int, default=None)
     parser.add_argument("--stop_increase", type=int, default=10)
     parser.add_argument("--metric", type=str, default='ll')
-    parser.add_argument("--n", type=int, default=20_000)
+    parser.add_argument("--n", type=int, default=40_000)
     parser.add_argument("--k", type=int, default=50)
 
     args = parser.parse_args()
