@@ -8,16 +8,16 @@ from data import *
 from util import *
 
 
-def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=5,
+def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=5, burn_in=500,
              max_iter=1000, min_iter=None, checkpoint=None, stop_increase=1, metric='ll'):
     assert model_type in ['lda', 'ctm',"slda"], f'invalid `model_type`: {model_type}...'
     assert metric in ['ll', 'pp'], f'invalid `metric`: {metric}...'
     if model_type == 'lda':
-        model = tp.LDAModel(k=topic_size, tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top)
+        model = tp.LDAModel(k=topic_size, tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top, burn_in=burn_in)
     if model_type == 'ctm':
-        model = tp.CTModel(k=topic_size)
+        model = tp.CTModel(k=topic_size, tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top, burn_in=burn_in)
     if model_type == "slda":
-        model = tp.SLDAModel(k=topic_size,vars="b")
+        model = tp.SLDAModel(k=topic_size,vars="b", tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top, burn_in=burn_in)
 
     sample_size = min(sample_size, len(dataset))
     for i in range(sample_size):
@@ -50,9 +50,9 @@ def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=
             print(f'Current loss: {cur_metric:.5f}')
             if cur_metric >= pre_metric:
                 pre_metric = cur_metric
-                cur_metric = 0.
             else:
                 stop_increase_cnt += 1
+            cur_metric = 0.
 
         if stop_increase_cnt >= stop_increase:
             break
@@ -78,8 +78,8 @@ def boxplot_results(results_train_metric,
 
     # ax_r = plt.twinx()
     _ = ax.boxplot(results_valid)
-    _ = ax.plot(np.arange(1, len(results_valid) + 1), results_train_metric, label=f'trainset: {args.metric}')
-    ax.set_xticks(range(1, len(results_valid) + 1))
+    _ = ax.plot(np.arange(1, len(results_train_metric) + 1), results_train_metric, label=f'trainset: {args.metric}')
+    ax.set_xticks(range(1, len(results_train_metric) + 1))
     ax.set_xticklabels(results_title)
     ax.set_xlabel(f'N & K')
     ax.set_ylabel(f'{args.metric}')
@@ -126,7 +126,7 @@ def run_trials(args, choice_set):
         print(f'start trial: {n}&{k}.')
         for r in range(args.rep_times):
             trained_model, final_metric = tp_one_trial(trainset, args.model, k, n, 
-                                                       args.min_cf, args.rm_top,
+                                                       args.min_cf, args.rm_top, args.burn_in,
                                                        args.max_iter, args.min_iter, args.checkpoint,
                                                        args.stop_increase, args.metric)
 
@@ -183,6 +183,7 @@ if __name__ == '__main__':
     # Other
     parser.add_argument("--rm_top", type=int, default=5)
     parser.add_argument("--min_cf", type=int, default=3)
+    parser.add_argument("--burn_in", type=int, default=500)
 
     args = parser.parse_args()
 
