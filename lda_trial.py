@@ -171,11 +171,10 @@ if __name__ == '__main__':
     parser.add_argument("--rm_top", type=int, default=5)
     parser.add_argument("--min_cf", type=int, default=3)
 
-
     args = parser.parse_args()
 
-    ns = [3_000, 5_000, 10_000, 15_000, 20_000]
-    ks = [3, 5, 10, 30, 100]
+    ns = [1_000, 3_000, 5_000, 10_000, 15_000, 20_000]
+    ks = [1, 2, 3, 5, 10, 50]
 
     if args.task == 'n':
         choice_set = [(n, args.k) for n in ns]
