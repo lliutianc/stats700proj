@@ -73,16 +73,15 @@ def boxplot_results(results_train_metric,
     # results_train_metric = np.array(results_train_metric)
     results_train = np.array(results_train).T
     results_train_metric = np.nanmedian(results_train, axis=0)
-
+    results_valid = [valid[~np.isnan(valid)] for valid in results_valid]
     results_valid = np.array(results_valid).T
-
+    
     plt.cla()
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(111)
-
     # ax_r = plt.twinx()
     _ = ax.boxplot(results_valid)
-    _ = ax.plot(np.arange(1, len(results_train_metric) + 1), results_train_metric, label=f'trainset: {args.metric}')
+    _ = ax.plot(np.arange(1, len(results_train_metric) + 1), results_train_metric, 'o-', abel=f'trainset: {args.metric}')
     ax.set_xticks(range(1, len(results_train_metric) + 1))
     ax.set_xticklabels(results_title)
     ax.set_xlabel(f'N & K')
