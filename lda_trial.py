@@ -179,7 +179,7 @@ if __name__ == '__main__':
     parser.add_argument("--task", type=str, choices=['n', 'k', 'nk'], default='k')
     parser.add_argument("--rep_times", type=int, default=3)
     # train
-    parser.add_argument("--max_iter", type=int, default=5_000)
+    parser.add_argument("--max_iter", type=int, default=50)
     parser.add_argument("--min_iter", type=int, default=None)
     parser.add_argument("--checkpoint", type=int, default=None)
     parser.add_argument("--stop_increase", type=int, default=5)
@@ -194,8 +194,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     ns = [3_000, 5_000, 10_000, 15_000, 20_000]
-    # ns = [3_000]
-    # ks = [20]
     ks = [2, 3, 5, 10, 50]
 
 
