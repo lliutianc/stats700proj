@@ -79,7 +79,6 @@ def boxplot_results(results_train_metric,
     plt.cla()
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(111)
-    # ax_r = plt.twinx()
     _ = ax.boxplot(results_valid)
     _ = ax.plot(np.arange(1, len(results_train_metric) + 1), results_train_metric, 'o-', abel=f'trainset: {args.metric}')
     ax.set_xticks(range(1, len(results_train_metric) + 1))
@@ -99,7 +98,6 @@ def eval_model(model, dataset, metric='ll'):
     docs = [model.make_doc(x) for (x, _) in dataset]
     lda_x, llk = model.infer(docs)
     n = np.array([len(x) for (x, _) in dataset])
-    llk = llk[! np.isnan(llk)]
     llk_per_word = llk / n
 
     if metric == 'll':
