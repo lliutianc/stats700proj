@@ -128,33 +128,40 @@ def run_trials(args, choice_set):
         cur_train_metric = 0.
         print(f'start trial: {n}&{k}.')
         for r in range(args.rep_times):
-            trained_model, final_metric = tp_one_trial(trainset, args.model, k, n, 
-                                                       args.min_cf, args.rm_top,  # args.burn_in,
-                                                       args.max_iter, args.min_iter, args.checkpoint,
-                                                       args.stop_increase, args.metric)
+            try:
+                trained_model, final_metric = tp_one_trial(trainset, args.model, k, n,
+                                                           args.min_cf, args.rm_top,  # args.burn_in,
+                                                           args.max_iter, args.min_iter, args.checkpoint,
+                                                           args.stop_increase, args.metric)
 
-            cur_train.append(eval_model(trained_model, trainset, args.metric))
-            cur_valid.append(eval_model(trained_model, validset, args.metric))
+                cur_train.append(eval_model(trained_model, trainset, args.metric))
+                cur_valid.append(eval_model(trained_model, validset, args.metric))
 
-            trained_model.save(os.path.join(result_path, f'{args.model}#{n}#{k}#{r}.bin'), full=False)
-            cur_train_metric += final_metric
-
-        results_train_metric.append(cur_train_metric / args.rep_times)
-        cur_train = np.array(cur_train)
-        cur_valid = np.array(cur_valid)
-        results_title.append(f'{n}&{k}')
+                trained_model.save(os.path.join(result_path, f'{args.model}#{n}#{k}#{r}.bin'), full=False)
+                cur_train_metric += final_metric
+            except:
+                print(f'Fail {n}&{k} {r}-th trail')
         try:
+            results_train_metric.append(cur_train_metric / args.rep_times)
+            cur_train = np.array(cur_train)
+            cur_valid = np.array(cur_valid)
+
             results_train.append(cur_train.mean(0))
             results_valid.append(cur_valid.mean(0))
         except:
-            print(cur_valid.shape)
-            exit(1)
+            results_train_metric.append(None)
+            results_train.append(None)
+            results_valid.append(None)
+
+        results_title.append(f'{n}&{k}')
+
         print(f'Finish: [{n}&{k}] trials in {(time.time() - start):.3f} seconds.')
 
     trial_result = {'results_train_metric': results_train_metric,
                     'results_train': results_train,
                     'results_valid': results_valid,
                     'results_title': results_title}
+
     with open(os.path.join(result_path, f'{args.model}-{args.task}.pkl'), 'wb') as file:
         pickle.dump(trial_result, file)
 
@@ -186,10 +193,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # ns = [3_000, 5_000, 10_000, 15_000, 20_000]
-    ns = [3_000]
-    ks = [20]
-    # ks = [2, 3, 5, 10, 50]
+    ns = [3_000, 5_000, 10_000, 15_000, 20_000]
+    # ns = [3_000]
+    # ks = [20]
+    ks = [2, 3, 5, 10, 50]
 
 
     if args.task == 'n':
