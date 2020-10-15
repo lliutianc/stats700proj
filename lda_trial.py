@@ -72,7 +72,7 @@ def boxplot_results(results_train_metric,
                     args, figwidth=5, figheight=4):
     # results_train_metric = np.array(results_train_metric)
     results_train = np.array(results_train).T
-    results_train_metric = np.median(results_train, axis=0)
+    results_train_metric = np.nanmedian(results_train, axis=0)
 
     results_valid = np.array(results_valid).T
 
@@ -100,7 +100,9 @@ def eval_model(model, dataset, metric='ll'):
     docs = [model.make_doc(x) for (x, _) in dataset]
     lda_x, llk = model.infer(docs)
     n = np.array([len(x) for (x, _) in dataset])
+    llk = llk[! np.isnan(llk)]
     llk_per_word = llk / n
+
     if metric == 'll':
         return llk_per_word
     if metric == 'pp':
@@ -159,13 +161,7 @@ def run_trials(args, choice_set):
     with open(os.path.join(result_path, f'{args.model}-{args.task}.pkl'), 'wb') as file:
         pickle.dump(trial_result, file)
 
-    # print(results_train)
-    # print(results_valid)
     boxplot_results(results_train_metric, results_train, results_valid, results_title, args)
-    # try:
-    #     # boxplot_results(results_train_metric, results_data, results_title, args)
-    # except:
-    #     print(f'Fail to plot: {n}#{k}.')
 
 
 if __name__ == '__main__':
@@ -193,8 +189,11 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    ns = [3_000, 5_000, 10_000, 15_000, 20_000]
-    ks = [2, 3, 5, 10, 50]
+    # ns = [3_000, 5_000, 10_000, 15_000, 20_000]
+    ns = [3_000]
+    ks = [20]
+    # ks = [2, 3, 5, 10, 50]
+
 
     if args.task == 'n':
         choice_set = [(n, args.k) for n in ns]
