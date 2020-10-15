@@ -80,7 +80,7 @@ def boxplot_results(results_train_metric,
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(111)
     _ = ax.boxplot(results_valid)
-    _ = ax.plot(np.arange(1, len(results_train_metric) + 1), results_train_metric, 'o-', abel=f'trainset: {args.metric}')
+    _ = ax.plot(np.arange(1, len(results_train_metric) + 1), results_train_metric, 'o-', label=f'trainset: {args.metric}')
     ax.set_xticks(range(1, len(results_train_metric) + 1))
     ax.set_xticklabels(results_title)
     ax.set_xlabel(f'N & K')
