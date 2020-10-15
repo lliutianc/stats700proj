@@ -21,7 +21,7 @@ def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=
 
     sample_size = min(sample_size, len(dataset))
     
-    max_iter = max_iter*sample_size//1000  # ensure the number of iterations increases with the size of sample
+    max_iter = max_iter * sample_size * topic_size // 2000  # ensure the number of iterations increases with the size of sample
     model.burn_in = max_iter // 5  # set burn-in: 20 percent of max iterations
 
     for i in range(sample_size):
@@ -30,7 +30,6 @@ def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=
             model.add_doc(doc,[float(label),])
         else:
             model.add_doc(doc)
-
 
     if min_iter is None:
         min_iter = max_iter // 5
@@ -93,6 +92,7 @@ def boxplot_results(results_train_metric,
     plt.tight_layout()
     plt_path = result_path + f'/{args.model}-{args.task}-{args.metric}.jpg'
     plt.savefig(plt_path)
+
 
 def eval_model(model, dataset, metric='ll'):
     assert metric in ['ll', 'pp'], f'invalid `metric`: {metric}...'
@@ -159,6 +159,8 @@ def run_trials(args, choice_set):
     with open(os.path.join(result_path, f'{args.model}-{args.task}.pkl'), 'wb') as file:
         pickle.dump(trial_result, file)
 
+    # print(results_train)
+    # print(results_valid)
     boxplot_results(results_train_metric, results_train, results_valid, results_title, args)
     # try:
     #     # boxplot_results(results_train_metric, results_data, results_title, args)
@@ -191,8 +193,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    ns = [1_000, 3_000, 5_000, 10_000, 15_000, 20_000]
-    ks = [1, 2, 3, 5, 10, 50]
+    ns = [3_000, 5_000, 10_000, 15_000, 20_000]
+    ks = [2, 3, 5, 10, 50]
 
     if args.task == 'n':
         choice_set = [(n, args.k) for n in ns]
