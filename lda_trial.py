@@ -10,7 +10,7 @@ from util import *
 
 def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=5,
              max_iter=1000, min_iter=None, checkpoint=None, stop_increase=1, metric='ll'):
-    assert model_type in ['lda', 'ctm',"slda"], f'invalid `model_type`: {model_type}...'
+    assert model_type in ['lda', 'ctm', 'slda', 'hdp'], f'invalid `model_type`: {model_type}...'
     assert metric in ['ll', 'pp'], f'invalid `metric`: {metric}...'
     if model_type == 'lda':
         model = tp.LDAModel(k=topic_size, tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top)
@@ -18,10 +18,11 @@ def tp_one_trial(dataset, model_type, topic_size, sample_size, min_cf=3, rm_top=
         model = tp.CTModel(k=topic_size, tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top)
     if model_type == "slda":
         model = tp.SLDAModel(k=topic_size,vars="b", tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top)
-
+    if model_type == 'hdp':
+        model = tp.HDPModel(initial_k=topic_size, tw=tp.TermWeight.ONE, min_cf=min_cf, rm_top=rm_top)
     sample_size = min(sample_size, len(dataset))
     
-    max_iter = max_iter * sample_size * topic_size // 2000  # ensure the number of iterations increases with the size of sample
+#     max_iter = max_iter * sample_size * topic_size // 2000  # ensure the number of iterations increases with the size of sample
     model.burn_in = max_iter // 5  # set burn-in: 20 percent of max iterations
 
     for i in range(sample_size):
@@ -128,40 +129,33 @@ def run_trials(args, choice_set):
         cur_train_metric = 0.
         print(f'start trial: {n}&{k}.')
         for r in range(args.rep_times):
-            try:
-                trained_model, final_metric = tp_one_trial(trainset, args.model, k, n,
-                                                           args.min_cf, args.rm_top,  # args.burn_in,
-                                                           args.max_iter, args.min_iter, args.checkpoint,
-                                                           args.stop_increase, args.metric)
+            trained_model, final_metric = tp_one_trial(trainset, args.model, k, n, 
+                                                       args.min_cf, args.rm_top,  # args.burn_in,
+                                                       args.max_iter, args.min_iter, args.checkpoint,
+                                                       args.stop_increase, args.metric)
 
-                cur_train.append(eval_model(trained_model, trainset, args.metric))
-                cur_valid.append(eval_model(trained_model, validset, args.metric))
+            cur_train.append(eval_model(trained_model, trainset, args.metric))
+            cur_valid.append(eval_model(trained_model, validset, args.metric))
 
-                trained_model.save(os.path.join(result_path, f'{args.model}#{n}#{k}#{r}.bin'), full=False)
-                cur_train_metric += final_metric
-            except:
-                print(f'Fail {n}&{k} {r}-th trail')
+            trained_model.save(os.path.join(result_path, f'{args.model}#{n}#{k}#{r}.bin'), full=False)
+            cur_train_metric += final_metric
+
+        results_train_metric.append(cur_train_metric / args.rep_times)
+        cur_train = np.array(cur_train)
+        cur_valid = np.array(cur_valid)
+        results_title.append(f'{n}&{k}')
         try:
-            results_train_metric.append(cur_train_metric / args.rep_times)
-            cur_train = np.array(cur_train)
-            cur_valid = np.array(cur_valid)
-
             results_train.append(cur_train.mean(0))
             results_valid.append(cur_valid.mean(0))
         except:
-            results_train_metric.append(None)
-            results_train.append(None)
-            results_valid.append(None)
-
-        results_title.append(f'{n}&{k}')
-
+            print(cur_valid.shape)
+            exit(1)
         print(f'Finish: [{n}&{k}] trials in {(time.time() - start):.3f} seconds.')
 
     trial_result = {'results_train_metric': results_train_metric,
                     'results_train': results_train,
                     'results_valid': results_valid,
                     'results_title': results_title}
-
     with open(os.path.join(result_path, f'{args.model}-{args.task}.pkl'), 'wb') as file:
         pickle.dump(trial_result, file)
 
@@ -179,7 +173,7 @@ if __name__ == '__main__':
     parser.add_argument("--task", type=str, choices=['n', 'k', 'nk'], default='k')
     parser.add_argument("--rep_times", type=int, default=3)
     # train
-    parser.add_argument("--max_iter", type=int, default=50)
+    parser.add_argument("--max_iter", type=int, default=1_000)
     parser.add_argument("--min_iter", type=int, default=None)
     parser.add_argument("--checkpoint", type=int, default=None)
     parser.add_argument("--stop_increase", type=int, default=5)
@@ -194,6 +188,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     ns = [3_000, 5_000, 10_000, 15_000, 20_000]
+    # ns = [3_000]
+    # ks = [20]
     ks = [2, 3, 5, 10, 50]
 
 
