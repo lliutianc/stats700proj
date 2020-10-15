@@ -13,7 +13,7 @@
 #SBATCH --output=/home/%u/outputs/%x-%j.log
 
 # <include the code as if you are running it from the terminal>
-python3 -u lda_trial.py --model $1 --task n --rep_times 3 --metric $2
+python3 -u lda_trial.py --model $1 --task $2 --rep_times 3 --metric ll --max_iter 200
 echo $'FINISH:'$1' - n'
 #python3 -u lda_trial.py --model $1 --task k --rep_times 3 --metric $2
 echo $'FINISH:'$1' - k'
