@@ -13,5 +13,5 @@
 #SBATCH --output=/home/%u/outputs/%x-%j.log
 
 # <include the code as if you are running it from the terminal>
-python3 -u lda_svm.py --model $1
+python3 -u lda_svm.py --model $1 --task $2
 echo $'FINISH:'$1'
