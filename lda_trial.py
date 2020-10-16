@@ -164,7 +164,7 @@ def run_trials(args, choice_set):
 
 if __name__ == '__main__':
     cur_path = os.path.abspath(os.path.dirname(__file__))
-    result_path = os.path.join(cur_path, 'result')
+    result_path = os.path.join(cur_path, 'result', 'new')
 
     make_dirs(result_path)
 
@@ -190,7 +190,7 @@ if __name__ == '__main__':
     ns = [3_000, 5_000, 10_000, 15_000, 20_000]
     # ns = [3_000]
     # ks = [20]
-    ks = [2, 3, 5, 10, 50]
+    ks = [2, 5, 10, 20, 50]
 
 
     if args.task == 'n':
