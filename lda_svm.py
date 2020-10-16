@@ -3,10 +3,13 @@ import argparse, os, time, pickle
 import tomotopy as tp
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.linear_model import SGDClassifier
+from sklearn.svm import LinearSVC
+from sklearn.metrics import accuracy_score
 
 from data import *
 from util import *
-
+from lda_trial import *
 
 if __name__ == '__main__':
     cur_path = os.path.abspath(os.path.dirname(__file__))
