@@ -23,8 +23,8 @@ STOPS = set(stopwords.words('english'))
 
 
 def is_stopword(word):
-    STOP_PAT = re.compile('^[a-zA-Z]{2,}$')
-    return not STOP_PAT.match(word) and word not in STOPS
+#     STOP_PAT = re.compile('^[a-zA-Z]{2,}$')
+    return word in STOPS
 
 
 def data_file(data):
