@@ -1,6 +1,7 @@
 import re
 import csv
-
+import string
+    
 import nltk
 from nltk.stem import *
 try:
@@ -18,7 +19,7 @@ VALID_FILE = 'dataset/Valid.csv'
 TEST_FILE = 'dataset/Test.csv'
 
 stemmer = PorterStemmer()
-STOPS = set(stemmer.stem(w) for w in stopwords.words('english'))
+STOPS = set(stopwords.words('english'))
 
 
 def is_stopword(word):
@@ -37,15 +38,19 @@ def data_file(data):
 
 
 class IMDBDataset(Dataset):
-    def __init__(self, data, data_limit=None, balanced_limit=False):
+    def __init__(self, data, data_limit=None, balanced_limit=False, load_class='both', stemmer=False):
         neg, pos = [], []
 
         with open(data_file(data), 'r', encoding="utf8") as file:   
             reader = csv.reader(file)
             next(reader)
             for idx, line in enumerate(reader):
-#                 words = [stemmer.stem(word) for word in line[0].split() if not is_stopword(word)]
-                words = [word for word in line[0].split() if not is_stopword(word)]
+                line[0] = line[0].translate(str.maketrans('', '', string.punctuation))
+                words = line[0].lower().split()
+                if stemmer:
+                    words = [stemmer.stem(word) for word in line[0].split() if not is_stopword(word)]
+                else:
+                    words = [word for word in words if not is_stopword(word)]
                 if line[1] == '1':
                     if not balanced_limit:
                         pos.append(words)
@@ -65,10 +70,17 @@ class IMDBDataset(Dataset):
 
         self.pos = pos
         self.neg = neg
-
-        self.x = self.pos + self.neg
-        self.y = [1 for _ in range(len(pos))] + [0 for _ in range(len(neg))]
-
+        
+        if load_class == 'both':
+            self.x = self.pos + self.neg
+            self.y = [1 for _ in range(len(pos))] + [0 for _ in range(len(neg))]
+        if load_class == 'pos':
+            self.x = self.pos
+            self.y = [1 for _ in range(len(pos))]
+        if load_class == 'neg':
+            self.x = self.neg
+            self.y = [0 for _ in range(len(neg))]
+            
     def __len__(self):
         return len(self.x)
 
